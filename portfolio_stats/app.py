@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import html
 import logging
+import sys
 
 from .charts import render_all
 from .config import Config
@@ -49,14 +50,17 @@ def build_message(stats: PortfolioStats) -> str:
 
 
 def run(config: Config, source: str, send: bool) -> None:
-    provider = build_provider(source, config.csv_path, config.base_currency)
+    provider = build_provider(source, config)
     portfolio = provider.get_portfolio()
 
-    symbols = [p.symbol for p in portfolio.positions]
-    log.info("Pricing %d positions", len(symbols))
-    prices = fetch_prices(symbols)
-    for position in portfolio.positions:
-        position.current_price = prices.get(position.symbol)
+    # Only price positions the provider did not already price (eToro returns rates itself).
+    to_price = [p.symbol for p in portfolio.positions if p.current_price is None]
+    if to_price:
+        log.info("Pricing %d position(s) via Yahoo Finance", len(to_price))
+        prices = fetch_prices(to_price)
+        for position in portfolio.positions:
+            if position.current_price is None:
+                position.current_price = prices.get(position.symbol)
 
     stats = compute_stats(portfolio)
     record_snapshot(config.db_path, stats)
@@ -83,6 +87,12 @@ def run(config: Config, source: str, send: bool) -> None:
 
 def main(argv: list[str] | None = None) -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    # The summary contains emoji; keep console output working on code pages like cp1252.
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
     parser = argparse.ArgumentParser(description="Publish portfolio statistics to Telegram.")
     parser.add_argument("--source", choices=["demo", "csv", "etoro"], help="override PORTFOLIO_SOURCE")
     parser.add_argument("--no-send", action="store_true", help="render only, do not post to Telegram")
