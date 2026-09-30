@@ -17,5 +17,5 @@ class DemoProvider(PortfolioProvider):
                 Position("ETH-USD", "Ethereum", 3, 2200, "crypto"),
             ],
             cash=2500,
-            currency="USD",
+            currency="EUR",
         )

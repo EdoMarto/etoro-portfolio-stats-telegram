@@ -19,7 +19,7 @@ from .base import PortfolioProvider
 
 
 class CsvProvider(PortfolioProvider):
-    def __init__(self, path: str, currency: str = "USD") -> None:
+    def __init__(self, path: str, currency: str = "EUR") -> None:
         self.path = path
         self.currency = currency
 

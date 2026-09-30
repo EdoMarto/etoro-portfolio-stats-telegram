@@ -33,7 +33,7 @@ class Config:
             telegram_chat_id=os.environ.get("TELEGRAM_CHAT_ID"),
             source=os.environ.get("PORTFOLIO_SOURCE", "demo"),
             csv_path=os.environ.get("PORTFOLIO_CSV", "data/sample_holdings.csv"),
-            base_currency=os.environ.get("BASE_CURRENCY", "USD"),
+            base_currency=os.environ.get("BASE_CURRENCY", "EUR"),
             db_path=os.environ.get("DB_PATH", "portfolio_history.db"),
             output_dir=os.environ.get("OUTPUT_DIR", "output"),
             etoro_api_key=os.environ.get("ETORO_API_KEY"),

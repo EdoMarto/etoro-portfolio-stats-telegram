@@ -44,6 +44,9 @@ def _first(mapping: dict, *keys, default=None):
 
 class EtoroProvider(PortfolioProvider):
     def __init__(self, api_key: str, user_key: str, account: str = "real", currency: str = "USD") -> None:
+        # `currency` is only a fallback: the real account currency is read from the
+        # balances response. eToro reports portfolio values in the account currency
+        # (often USD); the app converts to BASE_CURRENCY afterwards if they differ.
         if not api_key or not user_key:
             raise ValueError(
                 "eToro API credentials missing. Set ETORO_API_KEY and ETORO_USER_KEY "
@@ -126,13 +129,15 @@ class EtoroProvider(PortfolioProvider):
             )
             positions.append(position)
 
-        cash = self._fetch_cash()
-        return Portfolio(positions=positions, cash=cash, currency=self.currency)
+        cash, currency = self._fetch_cash_and_currency()
+        return Portfolio(positions=positions, cash=cash, currency=currency)
 
-    def _fetch_cash(self) -> float:
+    def _fetch_cash_and_currency(self) -> tuple[float, str]:
         try:
             balances = self._get("/balances/aggregated", params={"accountType": self.account})
         except Exception as exc:
             log.warning("Balance lookup failed, treating cash as 0: %s", exc)
-            return 0.0
-        return float(_first(balances, "cash", "available", "credit", "balance", default=0) or 0)
+            return 0.0, self.currency
+        cash = float(_first(balances, "cash", "available", "credit", "balance", default=0) or 0)
+        currency = str(_first(balances, "currency", "currencyCode", "accountCurrency", default=self.currency))
+        return cash, currency

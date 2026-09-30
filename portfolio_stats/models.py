@@ -42,5 +42,5 @@ class Position:
 class Portfolio:
     positions: list[Position]
     cash: float = 0.0
-    currency: str = "USD"
+    currency: str = "EUR"
     as_of: datetime = field(default_factory=datetime.now)

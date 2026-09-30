@@ -10,7 +10,8 @@ import sys
 from .charts import render_all
 from .config import Config
 from .history import load_series, record_snapshot
-from .prices import fetch_prices
+from .models import Portfolio
+from .prices import fetch_prices, get_fx_rate
 from .providers import build_provider
 from .stats import PortfolioStats, compute_stats
 from .telegram import send_message, send_photo_group
@@ -49,15 +50,34 @@ def build_message(stats: PortfolioStats) -> str:
     return "\n".join(lines)
 
 
+def _convert(portfolio: Portfolio, target: str) -> None:
+    """Convert a portfolio's monetary fields into `target` at the current FX rate."""
+    rate = get_fx_rate(portfolio.currency, target)
+    if not rate:
+        log.warning("No FX rate %s->%s; keeping values in %s", portfolio.currency, target, portfolio.currency)
+        return
+    for position in portfolio.positions:
+        position.avg_open_price *= rate
+        if position.current_price is not None:
+            position.current_price *= rate
+    portfolio.cash *= rate
+    portfolio.currency = target
+
+
 def run(config: Config, source: str, send: bool) -> None:
     provider = build_provider(source, config)
     portfolio = provider.get_portfolio()
+
+    # A provider may report in a different currency (e.g. an eToro account in USD).
+    # Convert everything it already priced into the base currency at the current rate.
+    if portfolio.currency.upper() != config.base_currency.upper():
+        _convert(portfolio, config.base_currency)
 
     # Only price positions the provider did not already price (eToro returns rates itself).
     to_price = [p.symbol for p in portfolio.positions if p.current_price is None]
     if to_price:
         log.info("Pricing %d position(s) via Yahoo Finance", len(to_price))
-        prices = fetch_prices(to_price)
+        prices = fetch_prices(to_price, config.base_currency)
         for position in portfolio.positions:
             if position.current_price is None:
                 position.current_price = prices.get(position.symbol)
