@@ -1,6 +1,6 @@
-# Portfolio Stats → Telegram
+# eToro Portfolio Stats → Telegram
 
-A small Python app that turns a portfolio into a Telegram update: it prices your holdings with live
+A small Python app that turns an eToro (or any broker's) portfolio into a Telegram update: it prices your holdings with live
 market data, computes statistics on your net worth and investments, renders an overview card and charts,
 and posts everything to a Telegram chat. Run it by hand or on a schedule.
 
