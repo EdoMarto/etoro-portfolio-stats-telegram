@@ -1,0 +1,7 @@
+symbol,name,quantity,avg_open_price,asset_type
+AAPL,Apple Inc.,12,150,stock
+MSFT,Microsoft,8,280,stock
+VWCE.DE,Vanguard FTSE All-World,25,95,etf
+BTC-USD,Bitcoin,0.4,38000,crypto
+ETH-USD,Ethereum,3,2200,crypto
+CASH,Cash balance,2500,1,cash

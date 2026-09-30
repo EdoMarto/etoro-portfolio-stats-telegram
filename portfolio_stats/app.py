@@ -1,0 +1,96 @@
+"""Entry point: load holdings, price them, compute stats, render and post."""
+
+from __future__ import annotations
+
+import argparse
+import html
+import logging
+
+from .charts import render_all
+from .config import Config
+from .history import load_series, record_snapshot
+from .prices import fetch_prices
+from .providers import build_provider
+from .stats import PortfolioStats, compute_stats
+from .telegram import send_message, send_photo_group
+
+log = logging.getLogger("portfolio_stats")
+
+
+def _money(value: float, currency: str) -> str:
+    return f"{value:,.2f} {currency}"
+
+
+def build_message(stats: PortfolioStats) -> str:
+    esc = html.escape
+    marker = "\U0001f7e2" if stats.total_pnl >= 0 else "\U0001f534"  # green / red circle
+
+    lines = [
+        f"<b>\U0001f4ca Portfolio update</b> — {esc(stats.as_of.strftime('%Y-%m-%d %H:%M'))}",
+        "",
+        f"\U0001f4b0 <b>Total value:</b> {_money(stats.total_value, stats.currency)}",
+        f"\U0001f4c8 <b>Invested:</b> {_money(stats.invested_value, stats.currency)}",
+        f"\U0001f4b5 <b>Cash:</b> {_money(stats.cash, stats.currency)}",
+        f"{marker} <b>P/L:</b> {_money(stats.total_pnl, stats.currency)} ({stats.total_pnl_pct:+.1f}%)",
+    ]
+
+    if stats.positions:
+        lines += ["", "<b>Top holdings</b>"]
+        for p in stats.positions[:5]:
+            weight = stats.weights.get(p.symbol, 0.0)
+            pl = f"{p.pnl_pct:+.1f}%" if p.pnl_pct is not None else "n/a"
+            lines.append(f"• {esc(p.symbol)} — {_money(p.market_value, stats.currency)} ({weight:.0f}%, {pl})")
+
+    if stats.unpriced:
+        missing = ", ".join(p.symbol for p in stats.unpriced)
+        lines += ["", f"⚠️ No price for: {esc(missing)}"]
+
+    return "\n".join(lines)
+
+
+def run(config: Config, source: str, send: bool) -> None:
+    provider = build_provider(source, config.csv_path, config.base_currency)
+    portfolio = provider.get_portfolio()
+
+    symbols = [p.symbol for p in portfolio.positions]
+    log.info("Pricing %d positions", len(symbols))
+    prices = fetch_prices(symbols)
+    for position in portfolio.positions:
+        position.current_price = prices.get(position.symbol)
+
+    stats = compute_stats(portfolio)
+    record_snapshot(config.db_path, stats)
+    series = load_series(config.db_path)
+
+    charts = render_all(stats, series, config.output_dir)
+    message = build_message(stats)
+    log.info("Rendered %d image(s)", len(charts))
+
+    can_send = bool(config.telegram_token and config.telegram_chat_id)
+    if not send or not can_send:
+        if not can_send:
+            log.warning("TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID not set — not posting.")
+        print(message)
+        print("\nImages:")
+        for path in charts:
+            print(f"  {path}")
+        return
+
+    send_message(config.telegram_token, config.telegram_chat_id, message)
+    send_photo_group(config.telegram_token, config.telegram_chat_id, charts)
+    log.info("Posted to Telegram chat %s", config.telegram_chat_id)
+
+
+def main(argv: list[str] | None = None) -> None:
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    parser = argparse.ArgumentParser(description="Publish portfolio statistics to Telegram.")
+    parser.add_argument("--source", choices=["demo", "csv", "etoro"], help="override PORTFOLIO_SOURCE")
+    parser.add_argument("--no-send", action="store_true", help="render only, do not post to Telegram")
+    args = parser.parse_args(argv)
+
+    config = Config.from_env()
+    run(config, source=args.source or config.source, send=not args.no_send)
+
+
+if __name__ == "__main__":
+    main()

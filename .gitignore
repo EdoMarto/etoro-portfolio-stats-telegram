@@ -1,0 +1,16 @@
+# Secrets and personal data
+.env
+*.csv
+!data/sample_holdings.csv
+
+# Generated files
+output/
+*.db
+*.png
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
