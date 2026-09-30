@@ -54,9 +54,12 @@ appears once at least two runs have been recorded):
 
 ```csv
 symbol,name,quantity,avg_open_price,asset_type
-AAPL,Apple Inc.,12,150,stock
-VWCE.DE,Vanguard FTSE All-World,25,95,etf
-BTC-USD,Bitcoin,0.4,38000,crypto
+SWDA.MI,iShares Core MSCI World,155,110,etf
+EIMI.MI,iShares Core MSCI EM IMI,124,45,etf
+AGGH.MI,iShares Core Global Aggregate Bond,1875,4.90,bond
+4GLD.DE,Xetra-Gold,51,95,commodity
+ASML.AS,ASML Holding,2,1200,stock
+BTC-USD,Bitcoin,0.03,55000,crypto
 CASH,Cash balance,2500,1,cash
 ```
 
