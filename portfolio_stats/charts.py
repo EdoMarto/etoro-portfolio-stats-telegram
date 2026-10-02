@@ -35,7 +35,7 @@ def _money(value: float, currency: str) -> str:
 
 
 def overview_card(stats: PortfolioStats, path: str) -> str:
-    """A dark summary card with the headline numbers — the 'screenshot'."""
+    """A dark summary card with the headline numbers, the 'screenshot'."""
     fig = plt.figure(figsize=(7, 4))
     fig.patch.set_facecolor("#0f172a")
     ax = fig.add_axes([0, 0, 1, 1])

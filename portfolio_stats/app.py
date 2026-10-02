@@ -28,7 +28,7 @@ def build_message(stats: PortfolioStats) -> str:
     marker = "\U0001f7e2" if stats.total_pnl >= 0 else "\U0001f534"  # green / red circle
 
     lines = [
-        f"<b>\U0001f4ca Portfolio update</b> — {esc(stats.as_of.strftime('%Y-%m-%d %H:%M'))}",
+        f"<b>\U0001f4ca Portfolio update</b>, {esc(stats.as_of.strftime('%Y-%m-%d %H:%M'))}",
         "",
         f"\U0001f4b0 <b>Total value:</b> {_money(stats.total_value, stats.currency)}",
         f"\U0001f4c8 <b>Invested:</b> {_money(stats.invested_value, stats.currency)}",
@@ -41,7 +41,7 @@ def build_message(stats: PortfolioStats) -> str:
         for p in stats.positions[:5]:
             weight = stats.weights.get(p.symbol, 0.0)
             pl = f"{p.pnl_pct:+.1f}%" if p.pnl_pct is not None else "n/a"
-            lines.append(f"• {esc(p.symbol)} — {_money(p.market_value, stats.currency)} ({weight:.0f}%, {pl})")
+            lines.append(f"• {esc(p.symbol)}, {_money(p.market_value, stats.currency)} ({weight:.0f}%, {pl})")
 
     if stats.unpriced:
         missing = ", ".join(p.symbol for p in stats.unpriced)
@@ -93,7 +93,7 @@ def run(config: Config, source: str, send: bool) -> None:
     can_send = bool(config.telegram_token and config.telegram_chat_id)
     if not send or not can_send:
         if not can_send:
-            log.warning("TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID not set — not posting.")
+            log.warning("TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID not set, not posting.")
         print(message)
         print("\nImages:")
         for path in charts:

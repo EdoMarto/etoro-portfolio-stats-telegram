@@ -12,7 +12,7 @@ instrument's symbol/name, and returns positions already priced with eToro's
 current rates (so no extra price lookup is needed).
 
 The field names below follow the API reference:
-https://api-portal.etoro.com/api-reference — the response shapes are read
+https://api-portal.etoro.com/api-reference, the response shapes are read
 defensively (several candidate keys) so small schema differences don't break it.
 Verify the mapping against your account's live responses; this adapter could not
 be tested against a real key here.
